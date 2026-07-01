@@ -99,7 +99,7 @@ echo "  data_dir: $DATA_DIR"
 echo "  output_dir: $OUTPUT_DIR"
 echo "  log: $LOG_PATH"
 
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types video \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \

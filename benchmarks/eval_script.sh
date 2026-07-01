@@ -38,7 +38,7 @@ echo "Thinking args: $THINKING_ARGS"
 echo "Running all tasks"
 
 # Task: rec_reason
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types rec_reason \
     --gpu_memory_utilization 0.9 \
     --model_path "$MODEL_PATH" \
@@ -50,7 +50,7 @@ python3 -u scripts/ray-vllm/evaluate.py \
     $THINKING_ARGS >> "${BASE_LOG_NAME}.log" 2>&1
 
 # Task: item_understand
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types item_understand \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \
@@ -62,7 +62,7 @@ python3 -u scripts/ray-vllm/evaluate.py \
     $THINKING_ARGS >> "${BASE_LOG_NAME}.log" 2>&1
 
 # Task: ad
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types ad \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \
@@ -75,7 +75,7 @@ python3 -u scripts/ray-vllm/evaluate.py \
     $THINKING_ARGS >> "${BASE_LOG_NAME}.log" 2>&1
 
 # Task: product
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types product \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \
@@ -88,7 +88,7 @@ python3 -u scripts/ray-vllm/evaluate.py \
     $THINKING_ARGS >> "${BASE_LOG_NAME}.log" 2>&1
 
 # Task: label_cond
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types label_cond \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \
@@ -101,7 +101,7 @@ python3 -u scripts/ray-vllm/evaluate.py \
     $THINKING_ARGS >> "${BASE_LOG_NAME}.log" 2>&1
 
 # Task: video
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types video \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \
@@ -114,7 +114,7 @@ python3 -u scripts/ray-vllm/evaluate.py \
     $THINKING_ARGS >> "${BASE_LOG_NAME}.log" 2>&1
 
 # Task: interactive
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types interactive \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \
@@ -127,7 +127,7 @@ python3 -u scripts/ray-vllm/evaluate.py \
     $THINKING_ARGS >> "${BASE_LOG_NAME}.log" 2>&1
 
 # Task: label_pred
-python3 -u scripts/ray-vllm/evaluate.py \
+PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/evaluate.py \
     --task_types label_pred \
     --gpu_memory_utilization 0.8 \
     --model_path "$MODEL_PATH" \
