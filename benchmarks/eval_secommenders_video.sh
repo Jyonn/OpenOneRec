@@ -29,6 +29,23 @@ LOG_PATH="${BENCHMARK_BASE_DIR}/auto_eval_logs/${VERSION}/${RESULT_NAME}.log"
 VIDEO_TEST_PATH="${DATA_DIR}/video/video_test.parquet"
 SID2PID_PATH="${DATA_DIR}/sid2pid.json"
 
+show_failure_context() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo
+        echo "Evaluation failed with exit code ${exit_code}"
+        echo "  log: $LOG_PATH"
+        if [ -f "$LOG_PATH" ]; then
+            echo "----- log tail -----"
+            tail -n 40 "$LOG_PATH" || true
+            echo "--------------------"
+        fi
+    fi
+    exit $exit_code
+}
+
+trap show_failure_context EXIT
+
 if [ ! -d "$SECOMMENDERS_ALGORITHM_DIR" ]; then
     echo "Secommenders algorithm directory not found: $SECOMMENDERS_ALGORITHM_DIR"
     echo "Set SECOMMENDERS_ALGORITHM_DIR explicitly if your checkout lives elsewhere."
@@ -45,6 +62,15 @@ if [ ! -f "$SID2PID_PATH" ]; then
     echo "Missing sid2pid.json: $SID2PID_PATH"
     echo "Re-run export_openonerec_video_test.py so the export directory is fully prepared."
     exit 1
+fi
+
+if [ -d "$MODEL_PATH" ]; then
+    if [ ! -f "$MODEL_PATH/config.json" ]; then
+        echo "Model directory does not look like a Hugging Face model root: $MODEL_PATH"
+        echo "Expected to find config.json directly under that path."
+        echo "You may have passed a parent directory such as ../models/ instead of a concrete model directory."
+        exit 1
+    fi
 fi
 
 mkdir -p "$(dirname "$LOG_PATH")"
@@ -71,6 +97,7 @@ echo "  model_path: $MODEL_PATH"
 echo "  dataset: $DATASET"
 echo "  data_dir: $DATA_DIR"
 echo "  output_dir: $OUTPUT_DIR"
+echo "  log: $LOG_PATH"
 
 python3 -u scripts/ray-vllm/evaluate.py \
     --task_types video \

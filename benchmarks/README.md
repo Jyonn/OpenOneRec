@@ -125,6 +125,7 @@ bash eval_secommenders_video.sh \
 Notes:
 - The script auto-resolves `../secommenders-algorithm/artifacts/openonerec_eval/<dataset>`.
 - Override the sibling checkout location with `SECOMMENDERS_ALGORITHM_DIR=/path/to/secommenders-algorithm` if needed.
+- `model_path` must be a concrete Hugging Face model id or a model root directory that directly contains files like `config.json`, not a parent folder such as `../models/`.
 - Additional trailing arguments are forwarded to `scripts/ray-vllm/evaluate.py`.
 - Results are written to `./results/v1.0/results_<result_name>/`.
 
@@ -156,5 +157,4 @@ Log files are located at:
 | label_pred | Kuaishou Internal | 346,190 | Predict user engagement with video content |
 | item_understand | Kuaishou Internal | 500 | Video SID to Caption generation task |
 | rec_reason | Kuaishou Internal | 470 | Recommendation reason inference |
-
 
