@@ -4,6 +4,7 @@ Recommendation Task Utilities
 Functions for SID extraction and recommendation metrics computation.
 """
 
+import math
 from typing import Set, Dict, List, Any
 
 
@@ -205,6 +206,37 @@ def compute_recall_at_k(
     recall = hit_count / len(ground_truth_sids)
 
     return recall
+
+
+def compute_ndcg_at_k(
+    predicted_sids: List[str],
+    ground_truth_sids: Set[str],
+    k: int
+) -> float:
+    """
+    Compute NDCG@k for a single sample with binary relevance.
+
+    Relevance is 1 if the predicted SID appears in the ground truth set and
+    has not already been credited earlier in the ranked list; otherwise 0.
+    This avoids giving repeated credit to duplicate generations.
+    """
+    if not predicted_sids or not ground_truth_sids or k <= 0:
+        return 0.0
+
+    dcg = 0.0
+    seen_hits: set[str] = set()
+    for rank, sid in enumerate(predicted_sids[:k]):
+        if sid in ground_truth_sids and sid not in seen_hits:
+            dcg += 1.0 / math.log2(rank + 2.0)
+            seen_hits.add(sid)
+
+    ideal_hits = min(k, len(ground_truth_sids))
+    if ideal_hits <= 0:
+        return 0.0
+    idcg = sum(1.0 / math.log2(rank + 2.0) for rank in range(ideal_hits))
+    if idcg <= 0.0:
+        return 0.0
+    return dcg / idcg
 
 
 def get_unique_generations(

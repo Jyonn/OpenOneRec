@@ -2,7 +2,7 @@
 Recommendation Task Evaluator
 
 Universal evaluator for all recommendation tasks.
-Computes Pass@k and Position1_Pass@k metrics.
+Computes Pass@k, Position1_Pass@k, Recall@k, and NDCG@k metrics.
 """
 
 import json
@@ -27,6 +27,8 @@ class RecommendationEvaluator(BaseEval):
     Metrics:
     - Pass@k: Check if any of top-k predictions match any ground truth SID
     - Position1_Pass@k: Check if any of top-k predictions match the first ground truth SID
+    - Recall@k: Fraction of ground-truth items covered in top-k
+    - NDCG@k: Rank-sensitive binary relevance quality
     """
 
     @property
@@ -39,11 +41,11 @@ class RecommendationEvaluator(BaseEval):
 
         if evaluation_mode in ("sid", "both"):
             for k in k_values:
-                metrics.extend([f"pass@{k}", f"position1_pass@{k}", f"recall@{k}"])
+                metrics.extend([f"pass@{k}", f"position1_pass@{k}", f"recall@{k}", f"ndcg@{k}"])
 
         if evaluation_mode in ("pid", "both"):
             for k in k_values:
-                metrics.extend([f"pid_pass@{k}", f"pid_position1_pass@{k}", f"pid_recall@{k}"])
+                metrics.extend([f"pid_pass@{k}", f"pid_position1_pass@{k}", f"pid_recall@{k}", f"pid_ndcg@{k}"])
 
         return metrics
 
@@ -109,7 +111,7 @@ class RecommendationEvaluator(BaseEval):
         select_k_strategy: str,
         code_to_pid: Dict[int, List[Tuple[int, float]]] = None,
         sid_to_pid_strategy: str = "most_popular"
-    ) -> Tuple[Dict[str, int], Dict[str, int], Dict[str, float], Dict[str, Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]:
+    ) -> Tuple[Dict[str, int], Dict[str, int], Dict[str, float], Dict[str, float], Dict[str, Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]:
         """
         Evaluate samples using a single mode (SID or PID)
 
@@ -121,7 +123,7 @@ class RecommendationEvaluator(BaseEval):
             sid_to_pid_strategy: Strategy for SID->PID conversion ("most_popular" or "random")
 
         Returns:
-            Tuple of (pass_counts, position1_pass_counts, recall_sums, per_sample_metrics, debug_info_lists)
+            Tuple of (pass_counts, position1_pass_counts, recall_sums, ndcg_sums, per_sample_metrics, debug_info_lists)
         """
         # Select utils module based on mode
         if evaluation_mode == "sid":
@@ -137,6 +139,7 @@ class RecommendationEvaluator(BaseEval):
         pass_at_k_counts = {k: 0 for k in k_values}
         position1_pass_at_k_counts = {k: 0 for k in k_values}
         recall_at_k_sums = {k: 0.0 for k in k_values}
+        ndcg_at_k_sums = {k: 0.0 for k in k_values}
 
         # Per-sample metrics collection
         per_sample_metrics = {}
@@ -156,6 +159,7 @@ class RecommendationEvaluator(BaseEval):
                 metrics[f"pass@{k}"] = False
                 metrics[f"position1_pass@{k}"] = False
                 metrics[f"recall@{k}"] = 0.0
+                metrics[f"ndcg@{k}"] = 0.0
             return metrics
 
         for sample_id, sample in self.samples.items():
@@ -211,6 +215,7 @@ class RecommendationEvaluator(BaseEval):
             sample_pass_results = {}
             sample_position1_pass_results = {}
             sample_recall_results = {}
+            sample_ndcg_results = {}
 
             for k in k_values:
                 # Compute Pass@k
@@ -232,11 +237,17 @@ class RecommendationEvaluator(BaseEval):
                 sample_recall_results[f"recall@{k}"] = recall_result
                 recall_at_k_sums[k] += recall_result
 
+                # Compute NDCG@k
+                ndcg_result = utils.compute_ndcg_at_k(predicted_ids, ground_truth_ids, k)
+                sample_ndcg_results[f"ndcg@{k}"] = ndcg_result
+                ndcg_at_k_sums[k] += ndcg_result
+
             # Store per-sample metrics
             sample_metrics = {
                 **sample_pass_results,
                 **sample_position1_pass_results,
-                **sample_recall_results
+                **sample_recall_results,
+                **sample_ndcg_results,
             }
 
             # For PID mode, save pid_generations (convert None/invalid to -1)
@@ -281,13 +292,14 @@ class RecommendationEvaluator(BaseEval):
                 else:
                     debug_info["failed_samples"].append(debug_item)
 
-        return pass_at_k_counts, position1_pass_at_k_counts, recall_at_k_sums, per_sample_metrics, debug_info
+        return pass_at_k_counts, position1_pass_at_k_counts, recall_at_k_sums, ndcg_at_k_sums, per_sample_metrics, debug_info
 
     def _calculate_metrics_from_counts(
         self,
         pass_counts: Dict[int, int],
         position1_pass_counts: Dict[int, int],
         recall_sums: Dict[int, float],
+        ndcg_sums: Dict[int, float],
         total_samples: int,
         k_values: List[int],
         prefix: str = ""
@@ -311,6 +323,7 @@ class RecommendationEvaluator(BaseEval):
             metrics[f"{prefix}pass@{k}"] = pass_counts[k] / total_samples if total_samples > 0 else 0.0
             metrics[f"{prefix}position1_pass@{k}"] = position1_pass_counts[k] / total_samples if total_samples > 0 else 0.0
             metrics[f"{prefix}recall@{k}"] = recall_sums[k] / total_samples if total_samples > 0 else 0.0
+            metrics[f"{prefix}ndcg@{k}"] = ndcg_sums[k] / total_samples if total_samples > 0 else 0.0
         return metrics
 
     def _compute_metrics_from_scratch(self) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
@@ -369,7 +382,7 @@ class RecommendationEvaluator(BaseEval):
             console.print(f"[cyan]{log_message}[/cyan]")
 
             # Run evaluation
-            pass_counts, position1_pass_counts, recall_sums, mode_per_sample_metrics, debug_info = self._evaluate_single_mode(
+            pass_counts, position1_pass_counts, recall_sums, ndcg_sums, mode_per_sample_metrics, debug_info = self._evaluate_single_mode(
                 k_values=k_values,
                 evaluation_mode=mode_name,
                 select_k_strategy=select_k_strategy,
@@ -379,7 +392,7 @@ class RecommendationEvaluator(BaseEval):
 
             # Calculate and add metrics
             mode_metrics = self._calculate_metrics_from_counts(
-                pass_counts, position1_pass_counts, recall_sums,
+                pass_counts, position1_pass_counts, recall_sums, ndcg_sums,
                 total_samples, k_values, metric_prefix
             )
             metrics.update(mode_metrics)
@@ -477,4 +490,3 @@ class RecommendationEvaluator(BaseEval):
                     console.print(f"    Ground truth PIDs: {item['ground_truth_pids']}")
                 console.print(f"    Top 5 generations: {item['top_10_generations'][:5]}")
                 console.print()
-

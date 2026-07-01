@@ -4,6 +4,7 @@ Recommendation Task Utilities (PID-based)
 Functions for PID extraction and recommendation metrics computation using PIDs.
 """
 
+import math
 import re
 import json
 import random
@@ -314,6 +315,36 @@ def compute_recall_at_k(
     recall = hit_count / len(ground_truth_ids)
 
     return recall
+
+
+def compute_ndcg_at_k(
+    predicted_ids: List[int],
+    ground_truth_ids: Set[int],
+    k: int
+) -> float:
+    """
+    Compute NDCG@k for a single sample with binary relevance.
+
+    Relevance is 1 if the predicted PID/IID appears in the ground truth set and
+    has not already been credited earlier in the ranked list; otherwise 0.
+    """
+    if not predicted_ids or not ground_truth_ids or k <= 0:
+        return 0.0
+
+    dcg = 0.0
+    seen_hits: set[int] = set()
+    for rank, item_id in enumerate(predicted_ids[:k]):
+        if item_id != 0 and item_id in ground_truth_ids and item_id not in seen_hits:
+            dcg += 1.0 / math.log2(rank + 2.0)
+            seen_hits.add(item_id)
+
+    ideal_hits = min(k, len(ground_truth_ids))
+    if ideal_hits <= 0:
+        return 0.0
+    idcg = sum(1.0 / math.log2(rank + 2.0) for rank in range(ideal_hits))
+    if idcg <= 0.0:
+        return 0.0
+    return dcg / idcg
 
 
 def get_unique_generations(
