@@ -181,7 +181,7 @@ class RecommendationEvaluator(BaseEval):
             # Get ground truth based on mode
             if evaluation_mode == "sid":
                 ground_truth = sample.get("ground_truth", "")
-                ground_truth_ids = utils.extract_ids_from_answer(ground_truth)
+                ground_truth_ids = set(utils.extract_ids_from_answer(ground_truth))
                 first_ground_truth_id = utils.extract_first_id_from_answer(ground_truth)
             else:  # pid mode
                 # Try answer_pid first, fallback to answer_iid if not available
@@ -190,7 +190,7 @@ class RecommendationEvaluator(BaseEval):
                     ground_truth_pids = sample.get("metadata", {}).get("answer_iid", [])
                 if isinstance(ground_truth_pids, str):
                     ground_truth_pids = json.loads(ground_truth_pids)
-                ground_truth_ids = utils.extract_ids_from_answer(ground_truth_pids)
+                ground_truth_ids = set(utils.extract_ids_from_answer(ground_truth_pids))
                 first_ground_truth_id = utils.extract_first_id_from_answer(ground_truth_pids)
 
             if not ground_truth_ids:
