@@ -89,6 +89,45 @@ bash eval_script.sh \
 
 For debugging purposes, you can add `--sample_size 10` to each python command in `eval_script.sh` to run evaluation on a smaller subset of data.
 
+### Step 4b: Run Video Evaluation on Secommenders Exports
+
+If you have already exported a Secommenders test set into:
+
+```text
+../secommenders-algorithm/artifacts/openonerec_eval/<dataset>/
+  sid2pid.json
+  video/video_test.parquet
+```
+
+you can run the `video` task directly with:
+
+```bash
+bash eval_secommenders_video.sh <model_path> <dataset> <result_name> [enable_thinking]
+```
+
+Examples:
+
+```bash
+bash eval_secommenders_video.sh \
+    OpenOneRec/OneRec-1.7B \
+    recifvideoxlargeall \
+    onerec17b_recifvideoxlargeall \
+    false
+
+bash eval_secommenders_video.sh \
+    /path/to/local/OneRec-8B \
+    recifvideoxlargeall \
+    onerec8b_recifvideoxlargeall \
+    false \
+    --sample_size 100
+```
+
+Notes:
+- The script auto-resolves `../secommenders-algorithm/artifacts/openonerec_eval/<dataset>`.
+- Override the sibling checkout location with `SECOMMENDERS_ALGORITHM_DIR=/path/to/secommenders-algorithm` if needed.
+- Additional trailing arguments are forwarded to `scripts/ray-vllm/evaluate.py`.
+- Results are written to `./results/v1.0/results_<result_name>/`.
+
 
 ### Step 5: View Results
 
@@ -117,6 +156,5 @@ Log files are located at:
 | label_pred | Kuaishou Internal | 346,190 | Predict user engagement with video content |
 | item_understand | Kuaishou Internal | 500 | Video SID to Caption generation task |
 | rec_reason | Kuaishou Internal | 470 | Recommendation reason inference |
-
 
 
