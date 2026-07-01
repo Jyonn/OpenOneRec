@@ -105,6 +105,8 @@ you can run the `video` task directly with:
 bash eval_secommenders_video.sh <model_path> <dataset> <result_name> [enable_thinking]
 ```
 
+If the 4th argument is omitted, the script defaults to `enable_thinking=false`, and any later arguments are forwarded directly to `evaluate.py`.
+
 Examples:
 
 ```bash
@@ -157,4 +159,3 @@ Log files are located at:
 | label_pred | Kuaishou Internal | 346,190 | Predict user engagement with video content |
 | item_understand | Kuaishou Internal | 500 | Video SID to Caption generation task |
 | rec_reason | Kuaishou Internal | 470 | Recommendation reason inference |
-

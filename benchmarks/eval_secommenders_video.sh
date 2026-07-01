@@ -5,8 +5,13 @@ set -euo pipefail
 MODEL_PATH=${1:-}
 DATASET=${2:-}
 RESULT_NAME=${3:-}
-ENABLE_THINKING=${4:-false}
-shift $(( $# >= 4 ? 4 : $# ))
+ENABLE_THINKING=false
+if [ $# -ge 4 ] && { [ "${4}" = "true" ] || [ "${4}" = "false" ]; }; then
+    ENABLE_THINKING=${4}
+    shift 4
+else
+    shift $(( $# >= 3 ? 3 : $# ))
+fi
 EXTRA_ARGS=("$@")
 
 if [ -z "$MODEL_PATH" ] || [ -z "$DATASET" ] || [ -z "$RESULT_NAME" ]; then
@@ -106,7 +111,7 @@ PYTHONPATH="${BENCHMARK_BASE_DIR}:${PYTHONPATH:-}" python3 -u scripts/ray-vllm/e
     --data_dir "$DATA_DIR" \
     --output_dir "$OUTPUT_DIR" \
     --dtype bfloat16 \
-    --worker_batch_size 256 \
+    --worker_batch_size 16 \
     --overwrite \
     --num_beams 32 \
     --num_return_sequences 32 \
